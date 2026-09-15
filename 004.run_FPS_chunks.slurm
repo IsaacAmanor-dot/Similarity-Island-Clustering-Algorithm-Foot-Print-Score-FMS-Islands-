@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${FPS_WORK_ROOT:-}" ]]; then
+    SCRIPT_DIR="${FPS_WORK_ROOT}"
+else
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+
 source "${SCRIPT_DIR}/000.config.sh"
 
 if [[ ! -s "${TASK_LIST}" ]]; then

@@ -42,6 +42,8 @@ JOB_ID=$(sbatch \
     --ntasks=1 \
     --cpus-per-task="${CPUS_REQUESTED}" \
     --time="${SLURM_TIME}" \
+    --export=ALL,FPS_WORK_ROOT="${WORK_ROOT}" \
+    --chdir="${WORK_ROOT}" \
     --output="${WORK_ROOT}/FPS_slurm_%j.out" \
     "${SCRIPT_DIR}/004.run_FPS_chunks.slurm")
 

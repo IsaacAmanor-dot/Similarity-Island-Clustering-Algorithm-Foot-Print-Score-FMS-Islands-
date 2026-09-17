@@ -9,14 +9,29 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${FPS_WORK_ROOT:-}" ]]; then
+    SCRIPT_DIR="${FPS_WORK_ROOT}"
+elif [[ -n "${SLURM_SUBMIT_DIR:-}" ]]; then
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+else
+    SCRIPT_DIR="$(pwd)"
+fi
 
-source "${SCRIPT_DIR}/000.config.sh"
+CONFIG_FILE="${SCRIPT_DIR}/000.config.sh"
+
+if [[ ! -f "${CONFIG_FILE}" ]]; then
+    echo "ERROR: Configuration file not found:"
+    echo "    ${CONFIG_FILE}"
+    exit 1
+fi
+
+source "${CONFIG_FILE}"
 
 cd "${WORK_ROOT}"
 
 if [[ ! -s "${TASK_LIST}" ]]; then
-    echo "ERROR: Missing task list: ${TASK_LIST}"
+    echo "ERROR: Missing task list:"
+    echo "    ${TASK_LIST}"
     echo "Run 002.make_task_list.sh first."
     exit 1
 fi
@@ -29,8 +44,7 @@ if (( TOTAL_TASKS == 0 )); then
 fi
 
 if (( TOTAL_TASKS > TASKS_PER_NODE )); then
-    echo "ERROR: ${TOTAL_TASKS} FPS calculations exceed available task slots."
-    echo "TASKS_PER_NODE=${TASKS_PER_NODE}"
+    echo "ERROR: ${TOTAL_TASKS} FPS calculations exceed TASKS_PER_NODE=${TASKS_PER_NODE}."
     exit 1
 fi
 
@@ -39,6 +53,7 @@ echo "FPS Similarity Island calculations"
 echo
 echo "SLURM job ID:     ${SLURM_JOB_ID:-direct}"
 echo "Node:             $(hostname)"
+echo "Workflow:         ${WORK_ROOT}"
 echo "Partition:        ${SLURM_JOB_PARTITION:-${SLURM_PARTITION}}"
 echo "FPS calculations: ${TOTAL_TASKS}"
 echo "Started:          $(date)"
@@ -56,12 +71,12 @@ for (( TASK_ID=1; TASK_ID<=TOTAL_TASKS; TASK_ID++ )); do
     TASK_IDS+=("${TASK_ID}")
 done
 
-FAILURES=0
-
 echo
 echo "All ${TOTAL_TASKS} FPS calculations launched."
 echo "Waiting for completion..."
 echo
+
+FAILURES=0
 
 for INDEX in "${!PIDS[@]}"; do
     PID="${PIDS[$INDEX]}"
